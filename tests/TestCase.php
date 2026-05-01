@@ -9,7 +9,7 @@ use Orchestra\Testbench\TestCase as OrchestraTestCase;
 abstract class TestCase extends OrchestraTestCase
 {
     use RefreshDatabase;
-    
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -26,6 +26,6 @@ abstract class TestCase extends OrchestraTestCase
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
-
+        $this->loadMigrationsFrom(__DIR__.'/Fixtures/migrations');
     }
 }
