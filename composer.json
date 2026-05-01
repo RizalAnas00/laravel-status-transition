@@ -1,0 +1,47 @@
+{
+    "name": "rizalsaja/laravel-status-transition",
+    "description": "A simple and flexible trait to add state machine behaviour to Laravel Eloquent models, with transition validation and automatic history tracking.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "eloquent",
+        "status",
+        "state-machine",
+        "trait",
+        "transition"
+    ],
+    "authors": [
+        {
+            "name": "Rizal Anas",
+            "email": "rizal.saja00@gmail.com"
+        }
+    ],
+    "require": {
+        "illuminate/database": "^10.0|^11.0|^12.0",
+        "illuminate/support": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rizalsaja\\LaravelStatusTransition\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rizalsaja\\LaravelStatusTransition\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rizalsaja\\LaravelStatusTransition\\LaravelStatusTransitionServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
