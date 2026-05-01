@@ -12,7 +12,7 @@ class LaravelStatusTransitionServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/laravel-status-transition.php', 'laravel-status-transition');
+        $this->mergeConfigFrom(__DIR__.'/../config/status-flow.php', 'status-flow');
     }
 
     /**
@@ -23,12 +23,12 @@ class LaravelStatusTransitionServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../config/laravel-status-transition.php' => config_path('laravel-status-transition.php'),
-            ], 'laravel-status-transition-config');
+                __DIR__.'/../config/status-flow.php' => config_path('status-flow.php'),
+            ], 'status-flow-config');
 
             $this->publishes([
                 __DIR__.'/../database/migrations/' => database_path('migrations'),
-            ], 'laravel-status-transition-migrations');
+            ], 'status-flow-migrations');
         }
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');

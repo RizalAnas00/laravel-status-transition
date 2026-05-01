@@ -1,5 +1,4 @@
 <?php
-// config/has-status.php
 
 return [
     /*
