@@ -90,7 +90,7 @@ chore: add PHP 8.4 to CI matrix
 
 - Place tests under `tests/` in a folder that mirrors the feature being tested.
 - Each test class extends `Rizalsaja\LaravelStatusTransition\Tests\TestCase`.
-- Use the `/** @test */` docblock on every test method.
+- Use the `#[Test]` docblock on every test method.
 - Test method names must describe the behaviour being verified, not the implementation detail.
 - Use fixture models from `tests/Fixtures/` — do not reference real application models.
 - Do not rely on `created_at` for ordering assertions — use `id` instead. SQLite in-memory timestamps are not reliable within a single test run.

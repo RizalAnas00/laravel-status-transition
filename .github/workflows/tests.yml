@@ -18,24 +18,31 @@ jobs:
           - php: "8.1"
             laravel: "10.*"
             testbench: "8.*"
+            phpunit: "^10.0"
           - php: "8.2"
             laravel: "10.*"
             testbench: "8.*"
+            phpunit: "^10.0"
           - php: "8.2"
             laravel: "11.*"
             testbench: "9.*"
+            phpunit: "^10.0"
           - php: "8.3"
             laravel: "11.*"
             testbench: "9.*"
+            phpunit: "^10.0"
           - php: "8.2"
             laravel: "12.*"
             testbench: "10.*"
+            phpunit: "^11.0"
           - php: "8.3"
             laravel: "12.*"
             testbench: "10.*"
+            phpunit: "^11.0"
           - php: "8.4"
             laravel: "12.*"
             testbench: "10.*"
+            phpunit: "^11.0"
 
     steps:
       - name: Checkout code
@@ -53,6 +60,7 @@ jobs:
           composer require \
             "laravel/framework:${{ matrix.laravel }}" \
             "orchestra/testbench:${{ matrix.testbench }}" \
+            "phpunit/phpunit:${{ matrix.phpunit }}" \
             --dev --no-interaction --no-update
           composer update --prefer-stable --prefer-dist --no-interaction
 
