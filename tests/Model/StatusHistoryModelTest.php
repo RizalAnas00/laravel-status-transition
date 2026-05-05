@@ -2,6 +2,7 @@
 
 namespace Rizalsaja\LaravelStatusTransition\Tests\Model;
 
+use PHPUnit\Framework\Attributes\Test;
 use Rizalsaja\LaravelStatusTransition\Models\StatusHistory;
 use Rizalsaja\LaravelStatusTransition\Tests\Fixtures\FoodOrder;
 use Rizalsaja\LaravelStatusTransition\Tests\Fixtures\Order;
@@ -9,7 +10,7 @@ use Rizalsaja\LaravelStatusTransition\Tests\TestCase;
 
 class StatusHistoryModelTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_records_status_history(): void
     {
         $order = Order::create(['title' => 'Order #1 Object']);
@@ -41,7 +42,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals(2, StatusHistory::count());
     }
 
-    /** @test */
+    #[Test]
     public function it_stores_the_correct_morph_type(): void
     {
         $order = Order::create(['title' => 'Order #2 Object']);
@@ -61,7 +62,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals(FoodOrder::class, $food_order_history->statusable_type);
     }
 
-    /** @test */
+    #[Test]
     public function it_stores_the_correct_statusable_id(): void
     {
         $order = Order::create(['title' => 'Order #3 Object']);
@@ -72,7 +73,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals($order->id, $history->statusable_id);
     }
 
-    /** @test */
+    #[Test]
     public function it_return_latest_status_history(): void
     {
         $order = Order::create(['title' => 'Order #10 Object']);
@@ -83,7 +84,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals('delivered', $order->latestStatus->to);
     }
 
-    /** @test */
+    #[Test]
     public function it_records_multiple_transitions_in_order(): void
     {
         $order = Order::create(['title' => 'Order #4 Object']);
@@ -97,7 +98,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals('processing', $order->statusHistory->last()->to);
     }
 
-    /** @test */
+    #[Test]
     public function it_records_the_reason_when_provided(): void
     {
         $order = Order::create(['title' => 'Order #5 Object']);
@@ -108,7 +109,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals('Paid via transfer', $history->reason);
     }
 
-    /** @test */
+    #[Test]
     public function it_records_null_reason_when_not_provided(): void
     {
         $order = Order::create(['title' => 'Order #6 Object']);
@@ -119,7 +120,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertNull($history->reason);
     }
 
-    /** @test */
+    #[Test]
     public function it_records_null_changed_by_when_unauthenticated(): void
     {
         $order = Order::create(['title' => 'Order #7 Object']);
@@ -130,7 +131,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertNull($history->changed_by);
     }
 
-    /** @test */
+    #[Test]
     public function it_does_not_mix_histories_between_models(): void
     {
         $order_a = Order::create(['title' => 'Order A']);
@@ -145,7 +146,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals(3, StatusHistory::count());
     }
 
-    /** @test */
+    #[Test]
     public function it_does_not_record_history_when_disabled(): void
     {
         $this->app['config']->set('status-flow.record_history', false);
@@ -157,7 +158,7 @@ class StatusHistoryModelTest extends TestCase
         $this->assertEquals(0, StatusHistory::count());
     }
 
-    /** @test */
+    #[Test]
     public function it_resolves_the_statusable_relation_back_to_the_model(): void
     {
         $order = Order::create(['title' => 'Order #9 Object']);
