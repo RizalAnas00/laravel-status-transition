@@ -43,6 +43,14 @@ jobs:
             laravel: "12.*"
             testbench: "10.*"
             phpunit: "^11.0"
+          - php: "8.3"
+            laravel: "13.*"
+            testbench: "11.*"
+            phpunit: "^11.0"
+          - php: "8.4"
+            laravel: "13.*"
+            testbench: "11.*"
+            phpunit: "^11.0"
 
     steps:
       - name: Checkout code
