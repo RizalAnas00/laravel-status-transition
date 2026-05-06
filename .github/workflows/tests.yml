@@ -2,10 +2,15 @@ name: Tests
 
 on:
   push:
-    branches: [main, development]
+    branches:
+      - main 
+      - development
+      - '[0-9]+.x'
   pull_request:
-    branches: [main, development]
-
+    branches: 
+      - main
+      - development
+      - '[0-9]+.x'
 jobs:
   test:
     name: PHP ${{ matrix.php }} — Laravel ${{ matrix.laravel }}
@@ -74,3 +79,17 @@ jobs:
 
       - name: Run tests
         run: vendor/bin/phpunit --testdox
+
+  all-tests-passed:
+    name: Tests
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "One or more tests failed"
+            exit 1
+          fi
+          echo "All tests passed"

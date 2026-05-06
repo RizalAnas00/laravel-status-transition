@@ -43,6 +43,33 @@ trait HasStatus
     }
 
     /**
+     * Extract allowed status names from transitions map.
+     * Handles both simple strings and callback arrays.
+     *
+     * @return array<string>
+     */
+    protected function getAllowedTransitionKeys(string $fromStatus): array
+    {
+        $transitions = $this->getAllowedTransitions();
+
+        if ($transitions === null || ! isset($transitions[$fromStatus])) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($transitions[$fromStatus] as $key => $value) {
+            if (is_string($key)) {
+                $result[] = $key;
+            } else {
+                $result[] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Get the column name used to store the status.
      * Override in model: protected $statusColumn = 'state';
      *
@@ -101,7 +128,7 @@ trait HasStatus
         $transitions = $this->getAllowedTransitions();
 
         if ($transitions !== null) {
-            $allowed = $transitions[$currentStatus] ?? [];
+            $allowed = $this->getAllowedTransitionKeys($currentStatus);
 
             if (! in_array($newStatus, $allowed)) {
                 throw new InvalidStatusTransitionException(
@@ -110,8 +137,18 @@ trait HasStatus
             }
         }
 
+        $callbacks = $this->getCallbacksForTransition($currentStatus, $newStatus);
+
+        if (isset($callbacks['before'])) {
+            $this->executeCallback($callbacks['before']);
+        }
+
         $this->{$this->getStatusColumn()} = $newStatus;
         $this->save();
+
+        if (isset($callbacks['after'])) {
+            $this->executeCallback($callbacks['after']);
+        }
 
         if (! $this->shouldRecordHistory()) {
             return $this;
@@ -195,9 +232,58 @@ trait HasStatus
             ));
         }
 
-        return $transitions[$this->getCurrentStatus()] ?? [];
+        return $this->getAllowedTransitionKeys($this->getCurrentStatus());
     }
 
+    /**
+     * Get all transitions from a given status
+     * @param string $status
+     * @return string[]
+     */
+    public function getStatusTransitions(string $status): array
+    {
+        $transition = $this->getAllowedTransitions();
+
+        return $transition[$status] ?? [];
+    }
+
+    /**
+     * Get before/after callbacks for a specific transition.
+     * Handles both: 'status' => [] (with callbacks) and 'status' (plain string)
+     *
+     * @return array<string, mixed>
+     */
+    protected function getCallbacksForTransition(string $fromStatus, string $toStatus): array
+    {
+        $transitions = $this->getAllowedTransitions();
+
+        if ($transitions === null) {
+            return [];
+        }
+
+        $target = $transitions[$fromStatus][$toStatus] ?? null;
+
+        if (is_string($target)) {
+            return [];
+        }
+
+        return is_array($target) ? $target : [];
+    }
+
+    /**
+     * Execute a callback, supports method name string or callable.
+     *
+     * @param  string|callable  $callback
+     * @return void
+     */
+    protected function executeCallback(string|callable $callback): void
+    {
+        if (is_callable($callback)) {
+            $callback($this);
+        } elseif (method_exists($this, $callback)) {
+            $this->{$callback}();
+        }
+    }
 
     // ------- Relations -------- //
     /**

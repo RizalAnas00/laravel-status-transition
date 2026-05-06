@@ -10,6 +10,7 @@ use Rizalsaja\LaravelStatusTransition\Tests\TestCase;
 class HasStatusTest extends TestCase
 {
 
+    #[Test]
     public function it_sets_initial_status_on_create(): void
     {
         $order = Order::create(['title' => 'Test Order']);
@@ -85,5 +86,67 @@ class HasStatusTest extends TestCase
 
         $this->assertEquals(1, Order::whereStatus('pending')->count());
         $this->assertEquals(1, Order::whereStatus('processing')->count());
+    }
+
+    #[Test]
+    public function it_executes_before_hook_before_transition(): void
+    {
+        $order = Order::create(['title' => 'Test Order']);
+        $order->transitionTo('processing');
+
+        $history = $order->statusHistory->first();
+
+        $this->assertEquals('pending', $history->from);
+        $this->assertEquals('processing', $history->to);
+    }
+
+    #[Test]
+    public function it_executes_after_hook_after_transition(): void
+    {
+        $order = Order::create(['title' => 'Test Order']);
+        $order->transitionTo('processing');
+
+        $this->assertEquals('after hooks order 1', $order->title);
+        $this->assertTrue($order->isStatus('processing'));
+    }
+
+    #[Test]
+    public function it_does_not_execute_hooks_on_transition_without_callbacks(): void
+    {
+        $order = Order::create(['title' => 'Test Order']);
+        $order->transitionTo('processing');
+        $order->transitionTo('shipped'); // shipped doesn't have hooks
+
+        // title did not change
+        $this->assertEquals('after hooks order 1', $order->title);
+        $this->assertTrue($order->isStatus('shipped'));
+    }
+
+    #[Test]
+    public function it_does_not_execute_hooks_when_transition_is_invalid(): void
+    {
+        $order = Order::create(['title' => 'Test Order']);
+
+        try {
+            $order->transitionTo('shipped'); // invalid from pending
+        } catch (InvalidStatusTransitionException) {
+            // hooks not executed
+            $this->assertEquals('Test Order', $order->title);
+            $this->assertTrue($order->isStatus('pending'));
+            return;
+        }
+
+        $this->fail('Expected InvalidStatusTransitionException was not thrown.');
+    }
+
+    #[Test]
+    public function it_only_executes_hooks_for_the_matching_transition(): void
+    {
+        $order = Order::create(['title' => 'Test Order']);
+        $order->transitionTo('cancelled'); // cancelled doesn't have hooks
+
+        // title did not change
+        $this->assertEquals('Test Order', $order->title);
+        $this->assertTrue($order->isStatus('cancelled'));
     }
 }
