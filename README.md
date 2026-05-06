@@ -50,7 +50,7 @@ php artisan migrate
 ## On-Progress Features
 
 > [!WARNING]
-> The following features are available on the [`1.1`](https://github.com/rizalsaja/laravel-status-transition/tree/1.1) branch and are part of the upcoming **[v1.1.0](https://github.com/rizalsaja/laravel-status-transition/milestone/1)** milestone. They are **not yet stable** and the API may change before the final release. Use at your own risk.
+> The following features are available on the [`1.1`](https://github.com/RizalAnas00/laravel-status-transition/tree/1.1) branch and are part of the upcoming **[v1.1.0](https://github.com/RizalAnas00/laravel-status-transition/milestone/1)** milestone. They are **not yet stable** and the API may change before the final release. Use at your own risk.
 
 ### Before and/or After Hooks for Status Transitions
 
