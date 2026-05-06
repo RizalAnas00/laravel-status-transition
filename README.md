@@ -47,6 +47,47 @@ php artisan vendor:publish --tag=laravel-status-transition-migrations
 php artisan migrate
 ```
 
+## On-Progress Features
+
+> [!WARNING]
+> The following features are available on the [`1.1`](https://github.com/rizalsaja/laravel-status-transition/tree/1.1) branch and are part of the upcoming **[v1.1.0](https://github.com/rizalsaja/laravel-status-transition/milestone/1)** milestone. They are **not yet stable** and the API may change before the final release. Use at your own risk.
+
+### Before and/or After Hooks for Status Transitions
+
+Attach `before` and/or `after` callbacks to specific transitions directly in your model's `$transitions` map.
+
+```php
+protected $transitions = [
+    'pending' => [
+        'processing' => [
+            'before' => 'validateStock',        // method name
+            'after'  => 'sendProcessingEmail',  // method name
+        ],
+        'cancelled', // no hooks needed — plain string is fine
+    ],
+];
+
+public function validateStock(): void
+{
+    // runs before the status is saved
+}
+
+public function sendProcessingEmail(): void
+{
+    // runs after the status is saved
+}
+```
+
+Closures are also supported:
+
+```php
+'cancelled' => [
+    'after' => function ($model) {
+        Log::info("Order {$model->id} was cancelled.");
+    },
+],
+```
+
 ## Usage
 
 ### 1. Add the trait to your model
