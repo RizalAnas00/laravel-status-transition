@@ -10,4 +10,9 @@ return [
      * If true, the status history will be recorded
      */
     'record_history' => true,
+
+    /*
+     * If true, the package will dispatch events on status transition
+     */
+    'dispatch_events' => false,
 ];
