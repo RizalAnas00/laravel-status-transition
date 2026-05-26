@@ -4,6 +4,8 @@ namespace Rizalsaja\LaravelStatusTransition\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
 use Rizalsaja\LaravelStatusTransition\Exceptions\InvalidStatusTransitionException;
+use Rizalsaja\LaravelStatusTransition\Events\StatusTransitioned;
+use Rizalsaja\LaravelStatusTransition\Events\StatusTransitionFailed;
 use Rizalsaja\LaravelStatusTransition\Models\StatusHistory;
 
 trait HasStatus
@@ -102,6 +104,17 @@ trait HasStatus
         return config('status-flow.record_history', true);
     }
 
+    /**
+     * Get the config's value of dispatch_events
+     * if false, then StatusHistory will not dispatch any events
+     * on default if there is no config, then status history will not dispatch any events
+     *
+     * @return bool  
+    */
+    protected function shouldDispatchEvents(): bool
+    {
+        return config('status-flow.dispatch_events', false);
+    }
 
     // -------- Core ---------- //
     /**
@@ -120,6 +133,8 @@ trait HasStatus
         $currentStatus = $this->getCurrentStatus();
 
         if (! in_array($newStatus, $this->getAllowedStatuses())) {
+            $this->dispatchTransitionFailed($currentStatus, $newStatus, $this->availableTransitions());
+
             throw new \InvalidArgumentException(
                 "Status [{$newStatus}] is not a valid status."
             );
@@ -131,6 +146,8 @@ trait HasStatus
             $allowed = $this->getAllowedTransitionKeys($currentStatus);
 
             if (! in_array($newStatus, $allowed)) {
+                $this->dispatchTransitionFailed($currentStatus, $newStatus, $allowed);
+
                 throw new InvalidStatusTransitionException(
                     $currentStatus, $newStatus, $allowed
                 );
@@ -148,6 +165,17 @@ trait HasStatus
 
         if (isset($callbacks['after'])) {
             $this->executeCallback($callbacks['after']);
+        }
+
+        // Dispatch event after successful transition
+        if ($this->shouldDispatchEvents()) {
+            event(new StatusTransitioned(
+                model: $this,
+                from: $currentStatus,
+                to: $newStatus,
+                reason: $reason,
+                changedBy: auth()->id()
+            ));
         }
 
         if (! $this->shouldRecordHistory()) {
@@ -344,5 +372,27 @@ trait HasStatus
     public function scopeWhereStatusIn(Builder $query, array $statuses): Builder
     {
         return $query->whereIn($this->getStatusColumn(), $statuses);
+    }
+
+    /**
+     * Dispatch a StatusTransitionFailed event for a rejected transition,
+     * when event dispatching is enabled.
+     *
+     * @param  array<string>  $allowedTransitions
+     * @return void
+     */
+    protected function dispatchTransitionFailed(string $from, string $attemptedTo, array $allowedTransitions): void
+    {
+        if (! $this->shouldDispatchEvents()) {
+            return;
+        }
+
+        event(new StatusTransitionFailed(
+            model: $this,
+            from: $from,
+            attemptedTo: $attemptedTo,
+            allowedTransitions: $allowedTransitions,
+            changedBy: auth()->id(),
+        ));
     }
 }
