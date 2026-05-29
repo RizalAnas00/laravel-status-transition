@@ -14,6 +14,7 @@ A simple and flexible trait to add state machine behaviour to Laravel Eloquent m
 - Define allowed statuses and enforce valid transition paths
 - Automatic status history recording with reason and actor tracking
 - Polymorphic history — one `status_histories` table for all models
+- Atomic transitions — model save, hooks, and history record are wrapped in a single database transaction
 - Query scopes for filtering by status
 - Configurable: disable history recording globally via config
 - Auto-discovery support — no manual provider registration needed
@@ -221,6 +222,37 @@ protected $initialStatus = 'draft';
 ### Allow all transitions freely
 
 Omit `$transitions` from your model. Without it, any status can transition to any other status defined in `$statuses`.
+
+## Transition Atomicity
+
+Every call to `transitionTo()` wraps all database writes inside a single `DB::transaction()`:
+
+1. `before` hook (if defined)
+2. Model status column saved to the database
+3. `after` hook (if defined)
+4. `StatusHistory` record created (when `record_history` is `true`)
+
+If **any** of these steps throw an exception, the entire transaction is rolled back. The model's status reverts to what it was before the call, and no history row is written.
+
+```php
+// Imagine the 'after' hook fires a sync HTTP call that times out:
+protected $transitions = [
+    'processing' => [
+        'shipped' => ['after' => 'notifyWarehouse'],
+    ],
+];
+
+public function notifyWarehouse(): void
+{
+    // If this throws, the status stays 'processing' and no history is written
+    Http::post('https://warehouse.example.com/notify', ['order' => $this->id]);
+}
+```
+
+> [!TIP]
+> To keep transactions short-lived and avoid row-level lock contention, always prefer queued jobs or dispatched events over synchronous HTTP calls inside hooks.
+
+Events (when `dispatch_events` is `true`) are dispatched **after** the transaction commits — listeners will never fire for a transition that was ultimately rolled back.
 
 ## Error Handling
 

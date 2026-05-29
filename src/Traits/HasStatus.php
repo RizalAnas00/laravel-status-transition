@@ -3,6 +3,7 @@
 namespace Rizalsaja\LaravelStatusTransition\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Rizalsaja\LaravelStatusTransition\Exceptions\InvalidStatusTransitionException;
 use Rizalsaja\LaravelStatusTransition\Events\StatusTransitioned;
 use Rizalsaja\LaravelStatusTransition\Events\StatusTransitionFailed;
@@ -119,7 +120,14 @@ trait HasStatus
     // -------- Core ---------- //
     /**
      * Transition the model to a new status.
-     * Validates against allowed statuses and transition map before saving.
+     *
+     * All database writes (model save, before/after callbacks, history record)
+     * are wrapped in a single database transaction. If any step throws an
+     * exception the entire transition is rolled back, keeping the model and
+     * its history in a consistent state.
+     *
+     * Events are dispatched **after** the transaction commits so listeners
+     * never fire for a transition that was ultimately rolled back.
      *
      * @param  string       $newStatus
      * @param  string|null  $reason
@@ -154,20 +162,36 @@ trait HasStatus
             }
         }
 
-        $callbacks = $this->getCallbacksForTransition($currentStatus, $newStatus);
+        // Wrap all database writes in a transaction so the model save,
+        // callbacks, and history record either all succeed or all roll back.
+        DB::transaction(function () use ($currentStatus, $newStatus, $reason): void {
+            $callbacks = $this->getCallbacksForTransition($currentStatus, $newStatus);
 
-        if (isset($callbacks['before'])) {
-            $this->executeCallback($callbacks['before']);
-        }
+            if (isset($callbacks['before'])) {
+                $this->executeCallback($callbacks['before']);
+            }
 
-        $this->{$this->getStatusColumn()} = $newStatus;
-        $this->save();
+            $this->{$this->getStatusColumn()} = $newStatus;
+            $this->save();
 
-        if (isset($callbacks['after'])) {
-            $this->executeCallback($callbacks['after']);
-        }
+            if (isset($callbacks['after'])) {
+                $this->executeCallback($callbacks['after']);
+            }
 
-        // Dispatch event after successful transition
+            if ($this->shouldRecordHistory()) {
+                StatusHistory::create([
+                    'statusable_type' => get_class($this),
+                    'statusable_id'   => $this->getKey(),
+                    'from'            => $currentStatus,
+                    'to'              => $newStatus,
+                    'changed_by'      => auth()->id(),
+                    'reason'          => $reason,
+                ]);
+            }
+        });
+
+        // Dispatch event only after the transaction has successfully committed.
+        // This guarantees listeners are never triggered for a rolled-back transition.
         if ($this->shouldDispatchEvents()) {
             event(new StatusTransitioned(
                 model: $this,
@@ -177,19 +201,6 @@ trait HasStatus
                 changedBy: auth()->id()
             ));
         }
-
-        if (! $this->shouldRecordHistory()) {
-            return $this;
-        }
-
-        StatusHistory::create([
-            'statusable_type' => get_class($this),
-            'statusable_id'   => $this->getKey(),
-            'from'            => $currentStatus,
-            'to'              => $newStatus,
-            'changed_by'      => auth()->id(),
-            'reason'          => $reason,
-        ]);
 
         return $this;
     }

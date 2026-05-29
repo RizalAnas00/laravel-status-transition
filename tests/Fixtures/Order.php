@@ -37,3 +37,4 @@ class Order extends Model
         $this->title = 'after hooks order 1';
     }
 }
+
