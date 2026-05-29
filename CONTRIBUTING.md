@@ -126,12 +126,16 @@ laravel-status-transition/
 │   └── laravel-status-transition.php
 └── tests/
     ├── Fixtures/
-    │   ├── migrations/
+    │   ├── Migration/
+    │   ├── FailingHookOrder.php
     │   ├── FoodOrder.php
     │   └── Order.php
     ├── Model/
     │   └── StatusHistoryModelTest.php
-    ├── HasStatusTest.php
+    ├── Trait/
+    │   ├── DispatchEventsTest.php
+    │   ├── HasStatusTest.php
+    │   └── TransactionTest.php
     └── TestCase.php
 ```
 
